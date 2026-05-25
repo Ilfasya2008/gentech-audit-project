@@ -15,7 +15,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     
     try {
       // Panggil API PHP yang ada di XAMPP
-      const response = await fetch('http://localhost/api-gentech/login.php', {
+      const response = await fetch('http://localhost/gentech-audit-project/api-gentech/login.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

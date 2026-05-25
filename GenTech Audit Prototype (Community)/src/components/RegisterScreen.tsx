@@ -22,7 +22,7 @@ export function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost/api-gentech/register.php', {
+      const response = await fetch('http://localhost/gentech-audit-project/api-gentech/register.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
