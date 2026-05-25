@@ -27,4 +27,3 @@ if (isset($data->name) && isset($data->email) && isset($data->password)) {
     echo json_encode(["status" => "error", "message" => "Data tidak lengkap"]);
 }
 ?>
-//test
