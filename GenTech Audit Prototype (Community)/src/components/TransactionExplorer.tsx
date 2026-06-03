@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Search, Filter, ArrowUpDown, Flag, CheckCircle, Home, FileText, ChevronRight, ArrowRight } from 'lucide-react';
 import { Transaction, AppScreen } from '../App';
 
@@ -109,10 +110,36 @@ const formatRupiah = (amount: number) => {
 };
 
 export function TransactionExplorer({ onSelectTransaction, onNavigate, flaggedTransactions }: TransactionExplorerProps) {
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'value'>('date');
 
-  const filteredTransactions = mockTransactions
+  useEffect(() => {
+    const fetchTxs = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/simulation-transactions');
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const mapped = response.data.data.map((tx: any) => ({
+            id: String(tx.id),
+            hash: tx.hash,
+            from: tx.from_entity,
+            to: tx.to_entity,
+            amount: Number(tx.amount),
+            timestamp: tx.transaction_date,
+            blockNumber: Number(tx.block_number),
+            gasUsed: Number(tx.gas_used),
+            status: tx.status === 'success' || tx.status === 'pending' || tx.status === 'failed' ? tx.status : 'success'
+          }));
+          setTransactions(mapped);
+        }
+      } catch (error) {
+        console.warn("Gagal mengambil transaksi dari Laravel API, menggunakan data mock lokal:", error);
+      }
+    };
+    fetchTxs();
+  }, []);
+
+  const filteredTransactions = transactions
     .filter(tx => {
       const matchesSearch = 
         tx.hash.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,7 +189,7 @@ export function TransactionExplorer({ onSelectTransaction, onNavigate, flaggedTr
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
           <div className="bg-blue-50 rounded-xl p-2 text-center border border-blue-100">
-            <div className="text-primary">{mockTransactions.length}</div>
+            <div className="text-primary">{transactions.length}</div>
             <div className="text-muted-foreground">Total</div>
           </div>
           <div className="bg-orange-50 rounded-xl p-2 text-center border border-orange-100">
@@ -171,13 +198,13 @@ export function TransactionExplorer({ onSelectTransaction, onNavigate, flaggedTr
           </div>
           <div className="bg-green-50 rounded-xl p-2 text-center border border-green-100">
             <div className="text-green-600">
-              {mockTransactions.filter(tx => tx.status === 'success').length}
+              {transactions.filter(tx => tx.status === 'success').length}
             </div>
             <div className="text-muted-foreground">Success</div>
           </div>
           <div className="bg-yellow-50 rounded-xl p-2 text-center border border-yellow-100">
             <div className="text-yellow-600">
-              {mockTransactions.filter(tx => tx.status === 'pending').length}
+              {transactions.filter(tx => tx.status === 'pending').length}
             </div>
             <div className="text-muted-foreground">Pending</div>
           </div>

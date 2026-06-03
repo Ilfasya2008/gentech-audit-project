@@ -15,11 +15,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Default Admin User
+        User::firstOrCreate(
+            ['email' => 'admin@gentech.com'],
+            [
+                'name' => 'Admin GenTech',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
+                'role' => 'admin',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Default Normal User
+        User::firstOrCreate(
+            ['email' => 'user@gentech.com'],
+            [
+                'name' => 'John Doe',
+                'password' => \Illuminate\Support\Facades\Hash::make('user123'),
+                'role' => 'user',
+            ]
+        );
+
+        // Call SimulationTransactionSeeder
+        $this->call(SimulationTransactionSeeder::class);
     }
 }

@@ -44,14 +44,17 @@ export function LearningModule({
         const response = await axios.get('http://localhost:8000/api/modules');
         
         // Memastikan format data yang diterima sesuai (terutama array topics & content)
-        const formattedModules = response.data.data.map((mod: any) => ({
-          id: mod.id,
-          title: mod.title,
-          duration: mod.duration || 'Waktu tidak ditentukan',
-          // Beri nilai default jika null di database
-          topics: Array.isArray(mod.topics) ? mod.topics : [], 
-          content: Array.isArray(mod.content) ? mod.content : [{ heading: "Pengantar", text: mod.description || "Belum ada konten" }]
-        }));
+        const formattedModules = response.data.data
+          .filter((mod: any) => mod.status !== 'draft')
+          .map((mod: any) => ({
+            id: mod.id,
+            title: mod.title,
+            duration: mod.duration || 'Waktu tidak ditentukan',
+            // Beri nilai default jika null di database
+            topics: Array.isArray(mod.topics) ? mod.topics : (typeof mod.topics === 'string' ? JSON.parse(mod.topics) : []), 
+            content: (typeof mod.content === 'string' ? JSON.parse(mod.content) : Array.isArray(mod.content) ? mod.content : null) 
+                     || [{ heading: "Pengantar", text: mod.description || "Belum ada konten" }]
+          }));
 
         setModules(formattedModules);
         onTotalModulesLoaded(formattedModules.length);
@@ -152,7 +155,22 @@ export function LearningModule({
           </div>
 
           {/* Navigation */}
-          <div className="space-y-3">
+          <div className="flex gap-3">
+            {isLastContent && (
+              <button
+                onClick={() => {
+                  if (!isModuleCompleted) {
+                    onModuleComplete(selectedModule.id);
+                  }
+                  setSelectedModule(null);
+                  setCurrentContentIndex(0);
+                }}
+                className="flex-1 py-4 bg-white text-primary border-2 border-primary rounded-2xl hover:bg-blue-50 transition shadow-sm font-bold"
+              >
+                Selesai & kembali ke List Modul
+              </button>
+            )}
+            
             <button
               onClick={() => {
                 if (!isLastContent) {
@@ -167,12 +185,13 @@ export function LearningModule({
                     modules.every(m =>
                       progress.completedModuleIds.includes(m.id) || m.id === selectedModule.id
                     );
-                  if (willAllBeDone) {
+                  
+                  if (willAllBeDone || allModulesCompleted) {
                     onAllModulesComplete();
                   }
                 }
               }}
-              className="w-full py-4 bg-primary text-white rounded-2xl hover:bg-blue-800 transition shadow-lg flex items-center justify-center gap-2"
+              className="flex-1 py-4 bg-primary text-white rounded-2xl hover:bg-blue-800 transition shadow-lg flex items-center justify-center gap-2 font-bold"
             >
               {isLastContent ? (
                 allModulesCompleted || isModuleCompleted
@@ -246,7 +265,7 @@ export function LearningModule({
                 </div>
                 <div className="flex-1">
                   <h3 className="text-primary mb-1">
-                    Modul {index + 1}: {module.title}
+                    {module.title}
                   </h3>
                   <p className="text-muted-foreground">{module.duration}</p>
                   <div className="flex flex-wrap gap-1 mt-2">

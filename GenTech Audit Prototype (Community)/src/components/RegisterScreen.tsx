@@ -22,9 +22,12 @@ export function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost/gentech-audit-project/api-gentech/register.php', {
+      const response = await fetch('http://localhost:8000/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
@@ -42,7 +45,7 @@ export function RegisterScreen() {
       }
     } catch (error) {
       console.error(error);
-      alert("Gagal terhubung ke server XAMPP.");
+      alert("Gagal terhubung ke server Laravel.");
     } finally {
       setIsLoading(false);
     }

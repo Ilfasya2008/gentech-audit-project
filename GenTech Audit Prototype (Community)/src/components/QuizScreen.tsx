@@ -1,6 +1,39 @@
 import { useState } from 'react';
-import { Brain, Check, X, ArrowRight, ArrowLeft, Trophy } from 'lucide-react';
+import { 
+  Brain, 
+  Check, 
+  X, 
+  ArrowRight, 
+  ArrowLeft, 
+  Trophy,
+  Shield,
+  Search,
+  BookOpen,
+  Award,
+  Zap,
+  Target,
+  Database,
+  TrendingUp,
+  Lock,
+  FileText,
+  Fingerprint
+} from 'lucide-react';
 import type { QuizQuestion, QuizType } from '../data/quizData';
+
+const iconMap: Record<string, React.ElementType> = {
+  brain: Brain,
+  shield: Shield,
+  search: Search,
+  book: BookOpen,
+  award: Award,
+  zap: Zap,
+  target: Target,
+  database: Database,
+  trend: TrendingUp,
+  lock: Lock,
+  file: FileText,
+  fingerprint: Fingerprint,
+};
 
 interface QuizScreenProps {
   quiz: QuizType;
@@ -56,6 +89,14 @@ export function QuizScreen({ quiz, previousBestScore, onComplete, onBack }: Quiz
       setSelectedAnswer(answers[currentQuestion - 1]);
       setShowExplanation(false);
     }
+  };
+
+  const handleRetry = () => {
+    setCurrentQuestion(0);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setAnswers(new Array(quizQuestions.length).fill(null));
+    setQuizCompleted(false);
   };
 
   if (quizCompleted) {
@@ -132,10 +173,10 @@ export function QuizScreen({ quiz, previousBestScore, onComplete, onBack }: Quiz
 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={onBack}
-                className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition"
+                onClick={handleRetry}
+                className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium"
               >
-                Kembali ke Daftar Kuis
+                Ulangi Kuis
               </button>
               <button
                 onClick={() => onComplete(score)}
@@ -156,11 +197,20 @@ export function QuizScreen({ quiz, previousBestScore, onComplete, onBack }: Quiz
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div
-              className={`w-12 h-12 bg-gradient-to-br ${quiz.color} rounded-xl flex items-center justify-center`}
-            >
-              <Brain className="w-6 h-6 text-white" />
-            </div>
+            {(() => {
+              const Icon = iconMap[quiz.icon || ''] ?? Brain;
+              const isHex = quiz.color?.startsWith('#');
+              const bgStyle = isHex ? { backgroundColor: quiz.color } : {};
+              const bgClass = isHex ? '' : `bg-gradient-to-br ${quiz.color || 'from-blue-500 to-indigo-600'}`;
+              return (
+                <div
+                  style={bgStyle}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${bgClass}`}
+                >
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+              );
+            })()}
             <div className="flex-1">
               <h2 className="text-gray-900 font-bold">{quiz.title}</h2>
               <p className="text-gray-600 text-sm">{quiz.description}</p>

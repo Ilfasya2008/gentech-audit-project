@@ -54,6 +54,8 @@ class ModuleController extends Controller
             'description' => 'required|string',
             'duration' => 'nullable|string',
             'status' => 'nullable|in:draft,published',
+            'topics' => 'nullable',
+            'content' => 'nullable'
         ]);
 
         $module->update($validated);

@@ -27,54 +27,85 @@ export function AuditReport({ flaggedTransactions, onBack, onViewDashboard }: Au
   const criticalCount = flaggedTransactions.filter(tx => tx.amount > 100000000).length;
 
   const handleDownload = () => {
-    alert('Laporan audit akan diunduh dalam format PDF');
+    // Sembunyikan elemen yang tidak perlu saat di-print
+    const actionButtons = document.getElementById('report-action-buttons');
+    if (actionButtons) actionButtons.style.display = 'none';
+    const downloadButton = document.getElementById('download-button');
+    if (downloadButton) downloadButton.style.display = 'none';
+
+    // Ubah title sementara agar nama file PDF default menjadi bagus
+    const originalTitle = document.title;
+    document.title = `Laporan Audit Digital GenTech Audit - ${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}`;
+
+    // Tambahkan style print sementara untuk memastikan background tercetak
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { margin: 0; }
+        #root { padding: 20px; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Buka dialog print bawaan browser (User bisa "Save as PDF")
+    window.print();
+
+    // Tampilkan kembali tombol setelah print dialog ditutup
+    if (actionButtons) actionButtons.style.display = 'flex';
+    if (downloadButton) downloadButton.style.display = 'block';
+    document.head.removeChild(style);
+    document.title = originalTitle; // Kembalikan title semula
   };
 
   return (
     <div className="h-full bg-gradient-to-b from-blue-50 to-white overflow-y-auto">
       {/* Sticky Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-              <FileText className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
+              <FileText className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-white">Laporan Audit Digital</h1>
-              <p className="text-blue-100">Audit Transaksi Blockchain</p>
+              <h1 className="text-2xl font-bold text-white drop-shadow-sm mb-1">Laporan Audit Digital</h1>
+              <p className="text-blue-100 font-medium tracking-wide text-sm">Audit Transaksi Blockchain</p>
             </div>
           </div>
           <button
+            id="download-button"
             onClick={handleDownload}
-            className="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition"
+            className="p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl hover:bg-white/30 transition shadow-sm"
           >
-            <Download className="w-5 h-5 text-white" />
+            <Download className="w-6 h-6 text-white" />
           </button>
         </div>
 
         {/* Stats Grid - 2x2 untuk mobile */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white bg-opacity-10 rounded-xl p-3 border border-white border-opacity-20">
-            <div className="text-blue-100 mb-1">Tanggal</div>
-            <div className="text-white">{currentDate}</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
+            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Tanggal</div>
+            <div className="text-white font-semibold text-sm">{currentDate}</div>
           </div>
-          <div className="bg-white bg-opacity-10 rounded-xl p-3 border border-white border-opacity-20">
-            <div className="text-blue-100 mb-1">Auditor</div>
-            <div className="text-white">GenTech</div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
+            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Auditor</div>
+            <div className="text-white font-semibold text-sm">GenTech Audit</div>
           </div>
-          <div className="bg-white bg-opacity-10 rounded-xl p-3 border border-white border-opacity-20">
-            <div className="text-blue-100 mb-1">Total Review</div>
-            <div className="text-white">{flaggedTransactions.length}</div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
+            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Total Review</div>
+            <div className="text-white font-semibold text-sm">{flaggedTransactions.length} Transaksi</div>
           </div>
-          <div className="bg-white bg-opacity-10 rounded-xl p-3 border border-white border-opacity-20">
-            <div className="text-blue-100 mb-1">Status</div>
-            <div className="text-white">Complete</div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
+            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Status</div>
+            <div className="text-white font-semibold text-sm flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4 text-green-300" /> Complete
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
+      <div id="audit-report-content" className="p-4 space-y-4">
         {/* Executive Summary */}
         <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
           <div className="flex items-center gap-2 mb-3">
@@ -263,7 +294,7 @@ export function AuditReport({ flaggedTransactions, onBack, onViewDashboard }: Au
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pb-safe">
+        <div id="report-action-buttons" className="flex gap-3 pb-safe">
           <button
             onClick={onBack}
             className="px-4 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition shadow-sm border border-gray-200"
