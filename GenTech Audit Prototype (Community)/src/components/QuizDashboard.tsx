@@ -19,7 +19,6 @@ import {
   Fingerprint 
 } from 'lucide-react';
 import type { UserProgress } from '../App';
-import logo from 'figma:asset/3b670beca6d9f65f8127efd31decabb8aaae9980.png';
 
 export interface ApiQuizType {
   id: number;
@@ -91,7 +90,6 @@ export function QuizDashboard({ userProgress, onSelectQuiz, onNavigateHome }: Qu
       <div className="bg-white border-b border-gray-200 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
-            <img src={logo} alt="GenTech Audit" className="w-10 h-10" />
             <div className="flex-1">
               <h1 className="text-primary text-xl font-bold">Pusat Kuis</h1>
               <p className="text-muted-foreground text-sm">Pilih jenis kuis sesuai topik yang ingin diuji</p>

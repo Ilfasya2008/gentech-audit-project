@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Lock, Mail, ArrowRight, X, KeyRound, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowRight, X, KeyRound, CheckCircle2, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import logo from 'figma:asset/3b670beca6d9f65f8127efd31decabb8aaae9980.png';
+import logo from '../assets/3b670beca6d9f65f8127efd31decabb8aaae9980.png';
 import { setCurrentUserEmail, setCurrentUserName, setCurrentUserRole } from '../lib/userProgress';
 
 interface LoginScreenProps {
