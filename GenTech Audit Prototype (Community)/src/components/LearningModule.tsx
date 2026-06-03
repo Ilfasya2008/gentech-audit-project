@@ -5,8 +5,10 @@ import { AppScreen, UserProgress } from '../App';
 import logo from 'figma:asset/3b670beca6d9f65f8127efd31decabb8aaae9980.png';
 
 interface LearningModuleProps {
-  onComplete: () => void;
+  onModuleComplete: (moduleId: number) => void;
+  onAllModulesComplete: () => void;
   onNavigate: (screen: AppScreen) => void;
+  onTotalModulesLoaded: (count: number) => void;
   progress: UserProgress;
 }
 
@@ -21,7 +23,13 @@ interface Module {
   }[];
 }
 
-export function LearningModule({ onComplete, onNavigate, progress }: LearningModuleProps) {
+export function LearningModule({
+  onModuleComplete,
+  onAllModulesComplete,
+  onNavigate,
+  onTotalModulesLoaded,
+  progress,
+}: LearningModuleProps) {
   // State untuk menampung data dari database
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +54,7 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
         }));
 
         setModules(formattedModules);
+        onTotalModulesLoaded(formattedModules.length);
         setLoading(false);
       } catch (error) {
         console.error("Gagal mengambil modul pembelajaran:", error);
@@ -79,6 +88,12 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
 
     const currentContent = selectedModule.content[currentContentIndex];
     const isLastContent = currentContentIndex === selectedModule.content.length - 1;
+    const isModuleCompleted = progress.completedModuleIds.includes(selectedModule.id);
+    const modulePosition =
+      modules.findIndex(m => m.id === selectedModule.id) + 1 || 1;
+    const allModulesCompleted =
+      modules.length > 0 &&
+      modules.every(m => progress.completedModuleIds.includes(m.id) || m.id === selectedModule.id);
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -93,7 +108,9 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
             </button>
             <div className="flex-1">
               <h3 className="text-primary">{selectedModule.title}</h3>
-              <p className="text-muted-foreground">Modul {selectedModule.id} dari {modules.length}</p>
+              <p className="text-muted-foreground">
+                Modul {modulePosition} dari {modules.length}
+              </p>
             </div>
           </div>
           
@@ -141,18 +158,26 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
                 if (!isLastContent) {
                   setCurrentContentIndex(currentContentIndex + 1);
                 } else {
+                  if (!isModuleCompleted) {
+                    onModuleComplete(selectedModule.id);
+                  }
                   setSelectedModule(null);
                   setCurrentContentIndex(0);
-                  // Anggap saja jika id-nya sama dengan total length, itu modul terakhir
-                  if (selectedModule.id === modules.length) {
-                    onComplete();
+                  const willAllBeDone =
+                    modules.every(m =>
+                      progress.completedModuleIds.includes(m.id) || m.id === selectedModule.id
+                    );
+                  if (willAllBeDone) {
+                    onAllModulesComplete();
                   }
                 }
               }}
               className="w-full py-4 bg-primary text-white rounded-2xl hover:bg-blue-800 transition shadow-lg flex items-center justify-center gap-2"
             >
               {isLastContent ? (
-                selectedModule.id === modules.length ? 'Selesai & Lanjut ke Kuis' : 'Selesaikan Modul'
+                allModulesCompleted || isModuleCompleted
+                  ? 'Selesai & Lanjut ke Kuis'
+                  : 'Selesaikan Modul'
               ) : (
                 'Lanjut'
               )}
@@ -183,12 +208,16 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
         <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
           <div className="flex justify-between items-center mb-2">
             <span className="text-primary">Progress</span>
-            <span className="text-primary">{progress.completedModules}/{modules.length || progress.totalModules}</span>
+            <span className="text-primary">
+              {progress.completedModules}/{modules.length || progress.totalModules || 1}
+            </span>
           </div>
           <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${(progress.completedModules / (modules.length || 1)) * 100}%` }}
+              style={{
+                width: `${(progress.completedModules / Math.max(modules.length || progress.totalModules || 1, 1)) * 100}%`,
+              }}
             />
           </div>
         </div>
@@ -209,8 +238,7 @@ export function LearningModule({ onComplete, onNavigate, progress }: LearningMod
             >
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  {/* Gunakan index untuk mengecek progress urutan modul */}
-                  {(index + 1) <= progress.completedModules ? (
+                  {progress.completedModuleIds.includes(module.id) ? (
                     <Check className="w-6 h-6 text-primary" />
                   ) : (
                     <BookOpen className="w-6 h-6 text-primary" />

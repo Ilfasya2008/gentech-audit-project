@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { loadUserProgress, saveUserProgress } from './lib/userProgress';
+import { getQuizById, getOverallQuizScore } from './data/quizData';
 
 // Import Komponen User
 import { LoginScreen } from './components/LoginScreen';
@@ -8,6 +10,7 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { LearningModule } from './components/LearningModule';
 import { QuizScreen } from './components/QuizScreen';
+import { QuizDashboard } from './components/QuizDashboard';
 import { TransactionExplorer } from './components/TransactionExplorer';
 import { TransactionDetail } from './components/TransactionDetail';
 import { BlockchainProof } from './components/BlockchainProof';
@@ -40,35 +43,81 @@ export interface FlaggedTransaction extends Transaction {
 export interface UserProgress {
   level: number;
   completedModules: number;
+  completedModuleIds: number[];
   totalModules: number;
   quizScore: number;
+  quizScores: Record<string, number>;
   transactionsReviewed: number;
   transactionsFlagged: number;
   badges: string[];
 }
 
-export default function App() {
-  // --- State Global ---
+function AppRoutes() {
+  const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [flaggedTransactions, setFlaggedTransactions] = useState<FlaggedTransaction[]>([]);
-  
-  const [userProgress, setUserProgress] = useState<UserProgress>({
-    level: 1, 
-    completedModules: 0,
-    totalModules: 5,
-    quizScore: 0,
-    transactionsReviewed: 0,
-    transactionsFlagged: 0,
-    badges: []
-  });
+  const [userProgress, setUserProgress] = useState<UserProgress>(loadUserProgress);
 
-  // --- Handlers ---
-  const handleCompleteModule = () => {
-    setUserProgress(prev => ({
-      ...prev,
-      completedModules: Math.min(prev.completedModules + 1, prev.totalModules)
-    }));
+  useEffect(() => {
+    saveUserProgress(userProgress);
+  }, [userProgress]);
+
+  const goTo = useCallback((path: string) => navigate(path), [navigate]);
+
+  const handleCompleteModule = (moduleId: number) => {
+    setUserProgress(prev => {
+      if (prev.completedModuleIds.includes(moduleId)) return prev;
+      const completedModuleIds = [...prev.completedModuleIds, moduleId];
+      return {
+        ...prev,
+        completedModuleIds,
+        completedModules: completedModuleIds.length,
+      };
+    });
   };
+
+  const setTotalModules = (count: number) => {
+    setUserProgress(prev =>
+      prev.totalModules === count ? prev : { ...prev, totalModules: count }
+    );
+  };
+
+  const handleQuizComplete = (quizId: string, score: number) => {
+    setUserProgress(prev => {
+      const previous = prev.quizScores[quizId] ?? 0;
+      const best = Math.max(previous, score);
+      const quizScores = { ...prev.quizScores, [quizId]: best };
+      const badges = [...prev.badges];
+      if (score >= 80 && !badges.includes('Quiz Expert')) {
+        badges.push('Quiz Expert');
+      }
+      return {
+        ...prev,
+        quizScores,
+        quizScore: getOverallQuizScore(quizScores),
+        badges,
+      };
+    });
+    goTo('/quiz');
+  };
+
+  function QuizPlayRoute() {
+    const { quizId } = useParams<{ quizId: string }>();
+    const quiz = quizId ? getQuizById(quizId) : undefined;
+
+    if (!quiz) {
+      return <Navigate to="/quiz" replace />;
+    }
+
+    return (
+      <QuizScreen
+        quiz={quiz}
+        previousBestScore={userProgress.quizScores[quiz.id]}
+        onComplete={score => handleQuizComplete(quiz.id, score)}
+        onBack={() => goTo('/quiz')}
+      />
+    );
+  }
 
   const handleFlagTransaction = (transaction: Transaction, note: string) => {
     const flagged: FlaggedTransaction = {
@@ -84,67 +133,100 @@ export default function App() {
     }));
   };
 
+  const screenToPath: Record<string, string> = {
+    dashboard: '/user/dashboard',
+    learning: '/learning',
+    quiz: '/quiz',
+    explorer: '/explorer',
+    report: '/report',
+    summary: '/summary',
+  };
+
+  const navigateToScreen = (screen: AppScreen) => {
+    goTo(screenToPath[screen] ?? `/${screen}`);
+  };
+
   return (
-    <Router>
-      <div className="min-h-screen w-full bg-background overflow-x-hidden">
-        <div className="w-full min-h-screen bg-white">
-          <Routes>
-            {/* Redirect bad URLs */}
-            <Route path="/dashboard" element={<Navigate to="/user/dashboard" replace />} />
+    <div className="min-h-screen w-full bg-background overflow-x-hidden">
+      <div className="w-full min-h-screen bg-white">
+        <Routes>
+          <Route path="/dashboard" element={<Navigate to="/user/dashboard" replace />} />
 
-            {/* 1. Route Login & Register */}
-            <Route path="/" element={<LoginScreen onLogin={() => window.location.href='/admin/dashboard'} />} />
-            <Route path="/register" element={<RegisterScreen />} />
+          <Route path="/" element={<LoginScreen onLogin={() => goTo('/admin/dashboard')} />} />
+          <Route path="/register" element={<RegisterScreen />} />
 
-            {/* 2. Alur User (Onboarding) */}
-            <Route path="/welcome" element={<WelcomeScreen onContinue={() => window.location.href='/onboarding'} />} />
-            <Route path="/onboarding" element={<OnboardingScreen onComplete={() => window.location.href='/user/dashboard'} />} />
-            
-            {/* 3. Main Dashboard (Responsive) */}
-            <Route path="/user/dashboard" element={
-              <Dashboard 
-                userProgress={userProgress} 
-                navigate={(screen: AppScreen) => window.location.href = `/${screen}`} 
+          <Route path="/welcome" element={<WelcomeScreen onContinue={() => goTo('/onboarding')} />} />
+          <Route path="/onboarding" element={<OnboardingScreen onComplete={() => goTo('/user/dashboard')} />} />
+
+          <Route
+            path="/user/dashboard"
+            element={
+              <Dashboard
+                userProgress={userProgress}
+                onTotalModulesLoaded={setTotalModules}
+                navigate={navigateToScreen}
               />
-            } />
+            }
+          />
 
-            {/* 4. Fitur Pembelajaran & Explorer */}
-            <Route path="/learning" element={
-              <LearningModule 
-                onComplete={() => { handleCompleteModule(); window.location.href='/quiz'; }} 
-                onNavigate={(screen: AppScreen) => window.location.href = `/${screen}`} 
-                progress={userProgress} 
+          <Route
+            path="/learning"
+            element={
+              <LearningModule
+                onModuleComplete={handleCompleteModule}
+                onAllModulesComplete={() => goTo('/quiz')}
+                onNavigate={navigateToScreen}
+                onTotalModulesLoaded={setTotalModules}
+                progress={userProgress}
               />
-            } />
+            }
+          />
 
-            <Route path="/quiz" element={
-              <QuizScreen 
-                onComplete={(score) => { window.location.href='/explorer'; }} 
-                onBack={() => window.location.href='/learning'} 
+          <Route
+            path="/quiz"
+            element={
+              <QuizDashboard
+                userProgress={userProgress}
+                onSelectQuiz={id => goTo(`/quiz/${id}`)}
+                onNavigateHome={() => goTo('/user/dashboard')}
               />
-            } />
+            }
+          />
 
-            <Route path="/explorer" element={
-              <TransactionExplorer 
+          <Route path="/quiz/:quizId" element={<QuizPlayRoute />} />
+
+          <Route
+            path="/explorer"
+            element={
+              <TransactionExplorer
                 onSelectTransaction={(tx) => {
                   setSelectedTransaction(tx);
-                  window.location.href='/detail';
-                }} 
-                onNavigate={(screen: AppScreen) => window.location.href = `/${screen}`} 
-                flaggedTransactions={flaggedTransactions} 
+                  goTo('/detail');
+                }}
+                onNavigate={navigateToScreen}
+                flaggedTransactions={flaggedTransactions}
               />
-            } />
+            }
+          />
 
-            {/* 5. Route Admin Dashboard */}
-            <Route path="/admin/dashboard" element={
+          <Route
+            path="/admin/dashboard"
+            element={
               <div className="w-full min-h-screen bg-white">
                 <AdminDashboard />
               </div>
-            } />
-
-          </Routes>
-        </div>
+            }
+          />
+        </Routes>
       </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppRoutes />
     </Router>
   );
 }

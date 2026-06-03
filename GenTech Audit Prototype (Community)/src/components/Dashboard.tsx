@@ -1,13 +1,28 @@
+import { useEffect } from 'react';
+import axios from 'axios';
 import { motion } from 'motion/react';
 import { BookOpen, Brain, Search, FileText, TrendingUp, Award, LogOut } from 'lucide-react';
 import type { AppScreen, UserProgress } from '../App';
+import { quizTypes } from '../data/quizData';
 
 interface DashboardProps {
   navigate: (screen: AppScreen) => void;
   userProgress: UserProgress;
+  onTotalModulesLoaded: (count: number) => void;
 }
 
-export default function Dashboard({ navigate, userProgress }: DashboardProps) {
+export default function Dashboard({ navigate, userProgress, onTotalModulesLoaded }: DashboardProps) {
+  useEffect(() => {
+    axios
+      .get('http://localhost:8000/api/modules')
+      .then(res => onTotalModulesLoaded(res.data.data?.length ?? 0))
+      .catch(() => {});
+  }, [onTotalModulesLoaded]);
+
+  const totalModules = userProgress.totalModules || 1;
+  const completedModules = userProgress.completedModules || 0;
+  const quizzesCompleted = Object.keys(userProgress.quizScores ?? {}).length;
+  const totalQuizzes = quizTypes.length;
   
   // Fungsi Logout
   const handleLogout = () => {
@@ -26,8 +41,8 @@ export default function Dashboard({ navigate, userProgress }: DashboardProps) {
       screen: 'learning' as AppScreen,
       color: 'from-blue-500 to-blue-600',
       progressValue: userProgress.completedModules,
-      progressText: `${userProgress.completedModules}/${userProgress.totalModules || 5} Selesai`,
-      progressPercent: ((userProgress.completedModules || 0) / (userProgress.totalModules || 5)) * 100
+      progressText: `${completedModules}/${totalModules} Selesai`,
+      progressPercent: (completedModules / totalModules) * 100
     },
     {
       icon: Brain,
@@ -35,9 +50,9 @@ export default function Dashboard({ navigate, userProgress }: DashboardProps) {
       description: 'Uji pemahaman Anda',
       screen: 'quiz' as AppScreen,
       color: 'from-purple-500 to-purple-600',
-      progressValue: userProgress.quizScore,
-      progressText: `Skor: ${userProgress.quizScore || 0}%`,
-      progressPercent: userProgress.quizScore || 0
+      progressValue: quizzesCompleted,
+      progressText: `${quizzesCompleted}/${totalQuizzes} kuis · ${userProgress.quizScore || 0}%`,
+      progressPercent: (quizzesCompleted / totalQuizzes) * 100
     },
     {
       icon: Search,
@@ -112,11 +127,14 @@ export default function Dashboard({ navigate, userProgress }: DashboardProps) {
         >
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Modul Selesai</p>
-            <p className="text-2xl font-bold text-blue-600">{userProgress.completedModules || 0}/{userProgress.totalModules || 5}</p>
+            <p className="text-2xl font-bold text-blue-600">{completedModules}/{totalModules}</p>
           </div>
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Skor Kuis</p>
-            <p className="text-2xl font-bold text-purple-600">{userProgress.quizScore || 0}%</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {quizzesCompleted}/{totalQuizzes}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">Rata-rata {userProgress.quizScore || 0}%</p>
           </div>
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Transaksi Ditandai</p>
