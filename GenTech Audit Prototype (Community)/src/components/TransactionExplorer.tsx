@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, ArrowUpDown, Flag, CheckCircle, Home, FileText, ChevronRight, ArrowRight } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Flag, CheckCircle, Home, FileText, ChevronRight, ArrowRight, Activity, Clock, XCircle } from 'lucide-react';
 import { Transaction, AppScreen } from '../App';
+import { motion } from 'motion/react';
 
 interface TransactionExplorerProps {
   onSelectTransaction: (transaction: Transaction) => void;
@@ -126,7 +127,7 @@ export function TransactionExplorer({ onSelectTransaction, onNavigate, flaggedTr
             to: tx.to_entity,
             amount: Number(tx.amount),
             timestamp: tx.transaction_date,
-            blockNumber: Number(tx.block_number),
+            blockNumber: tx.block_number || 'N/A',
             gasUsed: Number(tx.gas_used),
             status: tx.status === 'success' || tx.status === 'pending' || tx.status === 'failed' ? tx.status : 'success'
           }));
@@ -157,170 +158,213 @@ export function TransactionExplorer({ onSelectTransaction, onNavigate, flaggedTr
     });
 
   return (
-    <div className="h-full bg-gradient-to-b from-blue-50 to-white overflow-y-auto">
+    <div className="h-full bg-slate-50/50 overflow-y-auto relative pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-primary">Telusuri Transaksi</h1>
-            <p className="text-muted-foreground">Simulasi audit blockchain</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onNavigate('report')}
-              className="p-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition relative"
-            >
-              <FileText className="w-5 h-5 text-primary" />
-              {flaggedTransactions.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  {flaggedTransactions.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => onNavigate('dashboard')}
-              className="p-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-            >
-              <Home className="w-5 h-5 text-primary" />
-            </button>
-          </div>
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 sm:px-8 py-5 flex items-center justify-between shadow-sm">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Telusuri Transaksi</h1>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Simulasi Audit Blockchain</p>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2">
-          <div className="bg-blue-50 rounded-xl p-2 text-center border border-blue-100">
-            <div className="text-primary">{transactions.length}</div>
-            <div className="text-muted-foreground">Total</div>
-          </div>
-          <div className="bg-orange-50 rounded-xl p-2 text-center border border-orange-100">
-            <div className="text-orange-600">{flaggedTransactions.length}</div>
-            <div className="text-muted-foreground">Flagged</div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-2 text-center border border-green-100">
-            <div className="text-green-600">
-              {transactions.filter(tx => tx.status === 'success').length}
-            </div>
-            <div className="text-muted-foreground">Success</div>
-          </div>
-          <div className="bg-yellow-50 rounded-xl p-2 text-center border border-yellow-100">
-            <div className="text-yellow-600">
-              {transactions.filter(tx => tx.status === 'pending').length}
-            </div>
-            <div className="text-muted-foreground">Pending</div>
-          </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => onNavigate('report')}
+            className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all relative border border-indigo-100/50 shadow-sm"
+          >
+            <FileText className="w-5 h-5" />
+            {flaggedTransactions.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white">
+                {flaggedTransactions.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onNavigate('dashboard')}
+            className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all border border-slate-200/50 shadow-sm"
+          >
+            <Home className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
-      {/* Search and Sort */}
-      <div className="p-4">
-        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4 border border-gray-100">
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+      <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
+        {/* Stats */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-5 gap-4"
+        >
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-800">{transactions.length}</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center shrink-0">
+              <Flag className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-800">{flaggedTransactions.length}</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Flagged</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-800">
+                {transactions.filter(tx => tx.status === 'success').length}
+              </div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Success</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-800">
+                {transactions.filter(tx => tx.status === 'pending').length}
+              </div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pending</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center shrink-0">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-800">
+                {transactions.filter(tx => tx.status === 'failed').length}
+              </div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Failed</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Search and Sort */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 border border-slate-200/60 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Cari hash, pengirim, atau penerima..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-700 font-medium"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Urutkan:</span>
-            <button
-              onClick={() => setSortBy('date')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition ${
-                sortBy === 'date'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-muted-foreground'
-              }`}
-            >
-              <ArrowUpDown className="w-4 h-4" />
-              Waktu
-            </button>
-            <button
-              onClick={() => setSortBy('value')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition ${
-                sortBy === 'value'
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-muted-foreground'
-              }`}
-            >
-              <ArrowUpDown className="w-4 h-4" />
-              Nilai
-            </button>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider hidden md:block">Urutkan:</span>
+            <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+              <button
+                onClick={() => setSortBy('date')}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  sortBy === 'date'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <ArrowUpDown className="w-4 h-4" /> Waktu
+              </button>
+              <button
+                onClick={() => setSortBy('value')}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  sortBy === 'value'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <ArrowUpDown className="w-4 h-4" /> Nilai
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Transaction List */}
-        <div className="space-y-3">
-          {filteredTransactions.map(transaction => {
+        <div className="space-y-4">
+          {filteredTransactions.map((transaction, i) => {
             const isFlagged = flaggedTransactions.some(tx => tx.id === transaction.id);
 
             return (
-              <button
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
                 key={transaction.id}
                 onClick={() => onSelectTransaction(transaction)}
-                className="w-full bg-white rounded-2xl shadow-sm hover:shadow-md transition p-4 text-left border border-gray-100"
+                className="w-full group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 p-5 text-left border border-slate-200/60 hover:border-indigo-200 flex flex-col md:flex-row gap-5 items-center justify-between"
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    {transaction.status === 'success' ? (
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    ) : (
-                      <div className="w-5 h-5 border-2 border-yellow-500 rounded-full flex-shrink-0" />
-                    )}
-                    <span className={`${
-                      transaction.status === 'success' ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
-                      {transaction.status === 'success' ? 'Success' : 'Pending'}
-                    </span>
+                {/* Status & Flags */}
+                <div className="flex items-center gap-3 md:w-1/4 w-full">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                    transaction.status === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                    transaction.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                  }`}>
+                    {transaction.status === 'success' ? <CheckCircle className="w-6 h-6" /> :
+                     transaction.status === 'failed' ? <XCircle className="w-6 h-6" /> :
+                     <Clock className="w-5 h-5" />}
                   </div>
-                  {isFlagged && (
-                    <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-lg">
-                      <Flag className="w-4 h-4" />
-                      <span>Flagged</span>
+                  <div>
+                    <div className={`font-bold ${
+                      transaction.status === 'success' ? 'text-emerald-700' :
+                      transaction.status === 'failed' ? 'text-red-700' : 'text-amber-700'
+                    }`}>
+                      {transaction.status === 'success' ? 'Success' :
+                       transaction.status === 'failed' ? 'Failed' : 'Pending'}
                     </div>
-                  )}
+                    {isFlagged && (
+                      <div className="flex items-center gap-1 mt-1 text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full w-max">
+                        <Flag className="w-3 h-3" /> Flagged
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* From -> To */}
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                    <div>
-                      <div className="text-muted-foreground">Pengirim</div>
-                      <div className="text-primary">{transaction.from}</div>
-                    </div>
+                <div className="flex-1 w-full md:px-6">
+                  <div className="flex items-center justify-between md:justify-start gap-4 text-sm font-semibold text-slate-800">
+                    <div className="truncate w-full md:w-auto">{transaction.from}</div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 shrink-0 hidden md:block" />
+                    <div className="truncate w-full md:w-auto text-right md:text-left">{transaction.to}</div>
                   </div>
-                  <div className="flex items-center gap-2 ml-1">
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground">Penerima</div>
-                      <div className="text-primary">{transaction.to}</div>
-                    </div>
+                  <div className="text-xs text-slate-400 mt-2 font-mono truncate bg-slate-50 p-1.5 rounded-md inline-block">
+                    {transaction.hash}
                   </div>
                 </div>
 
-                {/* Amount & Time */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div>
-                    <div className="text-muted-foreground">Nilai Transaksi</div>
-                    <div className="text-primary">{formatRupiah(transaction.amount)}</div>
+                {/* Amount */}
+                <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-1/4 md:border-l border-slate-100 md:pl-6">
+                  <div className="text-left md:text-right">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nilai</div>
+                    <div className="font-black text-slate-800 text-lg">{formatRupiah(transaction.amount)}</div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                  </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
         {filteredTransactions.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-gray-100">
-            <Search className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-primary mb-2">Tidak ada transaksi</h3>
-            <p className="text-muted-foreground">Coba ubah kata kunci pencarian</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white rounded-3xl shadow-sm p-16 text-center border border-slate-200/60"
+          >
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Tidak ditemukan</h3>
+            <p className="text-slate-500">Coba gunakan kata kunci pencarian yang lain.</p>
+          </motion.div>
         )}
       </div>
     </div>

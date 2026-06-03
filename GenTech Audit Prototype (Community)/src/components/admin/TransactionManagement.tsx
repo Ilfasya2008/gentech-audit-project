@@ -39,9 +39,9 @@ export default function TransactionManagement() {
   const [formData, setFormData] = useState({
     from_entity: '',
     to_entity: '',
-    amount: 0,
+    amount: '' as number | '',
     status: 'success' as 'success' | 'pending' | 'failed',
-    gas_used: 21000,
+    gas_used: '' as number | '',
     block_number: '',
     transaction_date: ''
   });
@@ -71,9 +71,9 @@ export default function TransactionManagement() {
     setFormData({
       from_entity: '',
       to_entity: '',
-      amount: 0,
+      amount: '',
       status: 'success',
-      gas_used: 21000,
+      gas_used: '',
       block_number: '',
       transaction_date: new Date().toISOString().substring(0, 16) // Format YYYY-MM-DDTHH:MM
     });
@@ -88,7 +88,7 @@ export default function TransactionManagement() {
       to_entity: tx.to_entity,
       amount: tx.amount,
       status: tx.status,
-      gas_used: tx.gas_used || 21000,
+      gas_used: tx.gas_used || '',
       block_number: tx.block_number || '',
       transaction_date: tx.transaction_date ? new Date(tx.transaction_date).toISOString().substring(0, 16) : ''
     });
@@ -113,8 +113,8 @@ export default function TransactionManagement() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!formData.from_entity || !formData.to_entity || formData.amount <= 0) {
-      setErrorMsg("Pengirim, Penerima, dan Jumlah Transaksi wajib diisi dengan benar.");
+    if (!formData.from_entity || !formData.to_entity || formData.amount === '' || formData.amount <= 0 || formData.gas_used === '') {
+      setErrorMsg("Semua kolom (termasuk Jumlah Nominal dan Gas Used) wajib diisi dengan benar.");
       return;
     }
 
@@ -329,7 +329,7 @@ export default function TransactionManagement() {
                     placeholder="Nominal transaksi" 
                     className="w-full border-2 border-slate-100 focus:border-blue-500 outline-none p-3 rounded-xl text-sm transition bg-slate-50/50 focus:bg-white" 
                     value={formData.amount} 
-                    onChange={e => setFormData({...formData, amount: parseFloat(e.target.value) || 0})} 
+                    onChange={e => setFormData({...formData, amount: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
                     required
                   />
                 </div>
@@ -356,18 +356,25 @@ export default function TransactionManagement() {
                     placeholder="Contoh: 21000" 
                     className="w-full border-2 border-slate-100 focus:border-blue-500 outline-none p-3 rounded-xl text-sm transition bg-slate-50/50 focus:bg-white" 
                     value={formData.gas_used} 
-                    onChange={e => setFormData({...formData, gas_used: parseInt(e.target.value) || 21000})} 
+                    onChange={e => setFormData({...formData, gas_used: e.target.value === '' ? '' : parseInt(e.target.value)})} 
+                    required
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Block Number</label>
                   <input 
-                    type="text"
+                    type="number"
+                    min="1"
                     placeholder="Opsional (Kosongkan untuk acak)" 
                     className="w-full border-2 border-slate-100 focus:border-blue-500 outline-none p-3 rounded-xl text-sm transition bg-slate-50/50 focus:bg-white" 
                     value={formData.block_number} 
-                    onChange={e => setFormData({...formData, block_number: e.target.value})} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d+$/.test(val)) {
+                        setFormData({...formData, block_number: val});
+                      }
+                    }} 
                   />
                 </div>
               </div>

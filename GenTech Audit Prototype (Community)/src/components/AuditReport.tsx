@@ -1,5 +1,6 @@
-import { ArrowLeft, FileText, Download, Flag, CheckCircle, AlertTriangle, Calendar, Hash, Building2, TrendingUp } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Flag, CheckCircle, AlertTriangle, Calendar, Hash, Building2, TrendingUp, Shield } from 'lucide-react';
 import { FlaggedTransaction } from '../App';
+import { motion } from 'motion/react';
 
 interface AuditReportProps {
   flaggedTransactions: FlaggedTransaction[];
@@ -59,255 +60,292 @@ export function AuditReport({ flaggedTransactions, onBack, onViewDashboard }: Au
   };
 
   return (
-    <div className="h-full bg-gradient-to-b from-blue-50 to-white overflow-y-auto">
-      {/* Sticky Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
-              <FileText className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white drop-shadow-sm mb-1">Laporan Audit Digital</h1>
-              <p className="text-blue-100 font-medium tracking-wide text-sm">Audit Transaksi Blockchain</p>
-            </div>
-          </div>
-          <button
-            id="download-button"
-            onClick={handleDownload}
-            className="p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl hover:bg-white/30 transition shadow-sm"
-          >
-            <Download className="w-6 h-6 text-white" />
-          </button>
-        </div>
+    <div className="h-full bg-slate-50/50 overflow-y-auto relative pb-10">
+      {/* Background Decor */}
+      <div className="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-indigo-600/10 to-transparent pointer-events-none" />
 
-        {/* Stats Grid - 2x2 untuk mobile */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
-            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Tanggal</div>
-            <div className="text-white font-semibold text-sm">{currentDate}</div>
+      {/* Sticky Header */}
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 p-4 sm:p-6 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
+            <FileText className="w-6 h-6" />
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
-            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Auditor</div>
-            <div className="text-white font-semibold text-sm">GenTech Audit</div>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
-            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Total Review</div>
-            <div className="text-white font-semibold text-sm">{flaggedTransactions.length} Transaksi</div>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm">
-            <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Status</div>
-            <div className="text-white font-semibold text-sm flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-green-300" /> Complete
-            </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight mb-0.5">Laporan Audit Digital</h1>
+            <p className="text-slate-500 font-semibold text-xs uppercase tracking-wider">GenTech Audit Platform</p>
           </div>
         </div>
+        <button
+          id="download-button"
+          onClick={handleDownload}
+          className="p-3 bg-white border border-slate-200/80 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm text-slate-500"
+          title="Unduh PDF"
+        >
+          <Download className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* Content */}
-      <div id="audit-report-content" className="p-4 space-y-4">
+      <div id="audit-report-content" className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
+        
+        {/* Info Cards */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 text-indigo-500 mb-2">
+              <Calendar className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Tanggal</span>
+            </div>
+            <div className="font-bold text-slate-800">{currentDate}</div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 text-indigo-500 mb-2">
+              <Building2 className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Auditor</span>
+            </div>
+            <div className="font-bold text-slate-800">Tim GenTech</div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 text-indigo-500 mb-2">
+              <FileText className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Total Review</span>
+            </div>
+            <div className="font-bold text-slate-800">{flaggedTransactions.length} Transaksi</div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-2 text-emerald-500 mb-2">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Status</span>
+            </div>
+            <div className="font-bold text-emerald-600">Selesai</div>
+          </div>
+        </motion.div>
+
         {/* Executive Summary */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <FileText className="w-5 h-5 text-primary" />
-            <h2 className="text-primary">Ringkasan Eksekutif</h2>
-          </div>
-          
-          <p className="text-muted-foreground mb-4">
-            Audit ini dilakukan terhadap transaksi blockchain untuk mengidentifikasi transaksi yang memerlukan 
-            perhatian khusus. Berdasarkan analisis yang dilakukan, ditemukan <strong>{flaggedTransactions.length} transaksi</strong> yang ditandai untuk review lebih lanjut.
-          </p>
-          
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
-              <div className="flex items-center justify-center gap-1 text-orange-600 mb-1">
-                <Flag className="w-4 h-4" />
-              </div>
-              <div className="text-orange-900">{flaggedTransactions.length}</div>
-              <div className="text-orange-700">Flagged</div>
-            </div>
-            <div className="bg-red-50 rounded-xl p-3 text-center border border-red-100">
-              <div className="flex items-center justify-center gap-1 text-red-600 mb-1">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <div className="text-red-900">{criticalCount}</div>
-              <div className="text-red-700">Critical</div>
-            </div>
-            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
-              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <div className="text-blue-900 text-xs">{formatRupiah(totalValue)}</div>
-              <div className="text-blue-700">Total</div>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden"
+        >
+          <div className="border-b border-slate-100 p-6 bg-slate-50/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl"><FileText className="w-5 h-5" /></div>
+              <h2 className="text-xl font-bold text-slate-800">Ringkasan Eksekutif</h2>
             </div>
           </div>
-        </div>
+          <div className="p-6">
+            <p className="text-slate-600 font-medium leading-relaxed mb-6">
+              Audit ini dilakukan terhadap transaksi blockchain untuk mengidentifikasi aktivitas yang memerlukan 
+              perhatian khusus. Berdasarkan analisis yang telah diselesaikan, ditemukan <strong className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{flaggedTransactions.length} transaksi</strong> yang ditandai untuk review investigasi lebih lanjut.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-5 border border-orange-200/60 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shrink-0"><Flag className="w-5 h-5" /></div>
+                <div>
+                  <div className="text-2xl font-black text-orange-900">{flaggedTransactions.length}</div>
+                  <div className="text-xs font-bold text-orange-700 uppercase tracking-wider">Flagged</div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-2xl p-5 border border-rose-200/60 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0"><AlertTriangle className="w-5 h-5" /></div>
+                <div>
+                  <div className="text-2xl font-black text-rose-900">{criticalCount}</div>
+                  <div className="text-xs font-bold text-rose-700 uppercase tracking-wider">Kritis</div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-100/50 rounded-2xl p-5 border border-indigo-200/60 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0"><TrendingUp className="w-5 h-5" /></div>
+                <div>
+                  <div className="text-lg md:text-xl font-black text-indigo-900 truncate">{formatRupiah(totalValue)}</div>
+                  <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Total Nilai</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Findings */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <Flag className="w-5 h-5 text-orange-600" />
-            <h2 className="text-primary">Temuan Audit</h2>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden"
+        >
+          <div className="border-b border-slate-100 p-6 bg-slate-50/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-orange-100 text-orange-600 rounded-xl"><Flag className="w-5 h-5" /></div>
+              <h2 className="text-xl font-bold text-slate-800">Rincian Temuan Audit</h2>
+            </div>
           </div>
 
-          {flaggedTransactions.length === 0 ? (
-            <div className="bg-green-50 rounded-xl p-6 text-center border-2 border-green-200">
-              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-              <h3 className="text-green-900 mb-2">Tidak Ada Temuan</h3>
-              <p className="text-green-700">
-                Belum ada transaksi yang ditandai untuk review. Lanjutkan eksplorasi transaksi untuk memulai audit.
+          <div className="p-6">
+            {flaggedTransactions.length === 0 ? (
+              <div className="bg-emerald-50 rounded-3xl p-12 text-center border-2 border-emerald-100 border-dashed">
+                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <h3 className="text-2xl font-bold text-emerald-900 mb-2">Tidak Ada Temuan Mencurigakan</h3>
+                <p className="text-emerald-700 font-medium">
+                  Belum ada transaksi yang Anda tandai. Lanjutkan eksplorasi untuk memulai simulasi audit.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {flaggedTransactions.map((tx, index) => (
+                  <div key={tx.id} className="relative bg-white rounded-3xl p-6 border-2 border-orange-200/60 shadow-sm hover:shadow-md hover:border-orange-300 transition-all group overflow-hidden">
+                    {/* Decorative Background */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
+                    
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 text-white font-black text-lg rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-lg">Temuan Transaksi</h3>
+                          <span className={`mt-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider inline-block ${
+                            tx.amount > 100000000 
+                              ? 'bg-red-100 text-red-700' 
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {tx.amount > 100000000 ? 'Risiko Tinggi' : 'Risiko Menengah'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nilai Transaksi</div>
+                        <div className="font-black text-xl text-slate-800">{formatRupiah(tx.amount)}</div>
+                      </div>
+                    </div>
+
+                    {/* Content Grid */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Flow */}
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                        <div className="flex gap-4">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><Building2 className="w-4 h-4" /></div>
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Pengirim</div>
+                            <div className="font-bold text-slate-800">{tx.from}</div>
+                          </div>
+                        </div>
+                        <div className="w-0.5 h-6 bg-slate-200 ml-4 rounded-full" />
+                        <div className="flex gap-4">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><Building2 className="w-4 h-4" /></div>
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Penerima</div>
+                            <div className="font-bold text-slate-800">{tx.to}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Details & Note */}
+                      <div className="space-y-4">
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500 font-medium">Hash Block</span>
+                            <code className="text-slate-700 font-mono text-xs bg-white px-2 py-1 rounded border border-slate-200">
+                              {tx.hash.substring(0, 10)}...{tx.hash.substring(tx.hash.length - 8)}
+                            </code>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-500 font-medium">Waktu Eksekusi</span>
+                            <span className="font-bold text-slate-700">
+                              {new Date(tx.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {tx.flagNote && (
+                          <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-5 border border-orange-200/60">
+                            <div className="flex items-center gap-2 text-orange-800 font-bold mb-2">
+                              <FileText className="w-4 h-4" /> Catatan Auditor:
+                            </div>
+                            <p className="text-orange-900/80 text-sm font-medium leading-relaxed italic border-l-2 border-orange-300 pl-3">
+                              "{tx.flagNote}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Recommendations & Conclusion Row */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl"><CheckCircle className="w-5 h-5" /></div>
+              <h2 className="text-lg font-bold text-slate-800">Rekomendasi Tindakan</h2>
+            </div>
+            <ul className="space-y-4">
+              {[
+                'Verifikasi lebih lanjut transaksi > Rp 100 juta.',
+                'Periksa pola berulang entitas terindikasi.',
+                'Amankan log block terkait sebagai bukti forensik digital.',
+                'Laporkan ke divisi kepatuhan (compliance) jika diperlukan.'
+              ].map((rec, i) => (
+                <li key={i} className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">{i+1}</div>
+                  <span className="text-slate-600 font-medium text-sm leading-relaxed">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6 flex flex-col"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl"><Shield className="w-5 h-5" /></div>
+              <h2 className="text-lg font-bold text-slate-800">Kesimpulan Audit</h2>
+            </div>
+            <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50 flex-1">
+              <p className="text-indigo-900/80 font-medium text-sm leading-relaxed">
+                Audit simulasi blockchain telah berhasil dilakukan memanfaatkan transparansi dan kekekalan (immutability) datanya. Transaksi yang terindikasi mencurigakan telah ditandai dengan baik dan siap untuk proses forensik selanjutnya.
               </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {flaggedTransactions.map((tx, index) => (
-                <div key={tx.id} className="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-2">
-                      <div className="w-8 h-8 bg-orange-600 text-white rounded-lg flex items-center justify-center flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-primary mb-1">
-                          Temuan #{index + 1}
-                        </h3>
-                        <span className={`px-2 py-1 rounded text-xs inline-block ${
-                          tx.amount > 100000000 
-                            ? 'bg-red-100 text-red-700 border border-red-200' 
-                            : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                        }`}>
-                          {tx.amount > 100000000 ? 'Critical' : 'Moderate'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Amount */}
-                  <div className="bg-white rounded-lg p-3 mb-3 border border-orange-200">
-                    <div className="text-muted-foreground mb-1">Nilai Transaksi</div>
-                    <div className="text-primary">{formatRupiah(tx.amount)}</div>
-                  </div>
-
-                  {/* Sender & Receiver */}
-                  <div className="space-y-2 mb-3">
-                    <div className="bg-white rounded-lg p-3 border border-orange-200">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Building2 className="w-4 h-4" />
-                        <span>Pengirim</span>
-                      </div>
-                      <div className="text-primary">{tx.from}</div>
-                    </div>
-                    <div className="bg-white rounded-lg p-3 border border-orange-200">
-                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Building2 className="w-4 h-4" />
-                        <span>Penerima</span>
-                      </div>
-                      <div className="text-primary">{tx.to}</div>
-                    </div>
-                  </div>
-
-                  {/* Technical Details */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Hash</span>
-                      <code className="text-primary text-xs bg-white px-2 py-1 rounded border border-orange-200">
-                        {tx.hash.substring(0, 10)}...{tx.hash.substring(tx.hash.length - 8)}
-                      </code>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Block</span>
-                      <span className="text-primary">#{tx.blockNumber.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Waktu</span>
-                      <span className="text-primary">
-                        {new Date(tx.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Flag Note */}
-                  {tx.flagNote && (
-                    <div className="mt-3 bg-white rounded-lg p-3 border border-orange-200">
-                      <div className="text-orange-700 mb-1">📝 Catatan Audit:</div>
-                      <p className="text-orange-900">{tx.flagNote}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Recommendations */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <h2 className="text-primary">Rekomendasi</h2>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200 space-y-2">
-            <div className="flex items-start gap-2 text-green-800">
-              <span className="flex-shrink-0">1.</span>
-              <span>Lakukan verifikasi lebih lanjut terhadap transaksi dengan nilai tinggi ({'>'} Rp 100 juta)</span>
-            </div>
-            <div className="flex items-start gap-2 text-green-800">
-              <span className="flex-shrink-0">2.</span>
-              <span>Periksa pola transaksi dari entitas yang sama untuk mendeteksi aktivitas tidak biasa</span>
-            </div>
-            <div className="flex items-start gap-2 text-green-800">
-              <span className="flex-shrink-0">3.</span>
-              <span>Verifikasi status konfirmasi blockchain untuk semua transaksi yang ditandai</span>
-            </div>
-            <div className="flex items-start gap-2 text-green-800">
-              <span className="flex-shrink-0">4.</span>
-              <span>Dokumentasikan temuan dan simpan bukti blockchain untuk referensi masa depan</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Conclusion */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <h2 className="text-primary mb-3">Kesimpulan</h2>
-          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-            <p className="text-blue-900">
-              Audit blockchain telah berhasil dilakukan dengan memanfaatkan transparansi dan immutability 
-              yang menjadi karakteristik teknologi blockchain. Semua transaksi yang ditandai telah 
-              terverifikasi secara kriptografis dan tercatat permanen di blockchain, memberikan jejak 
-              audit yang dapat diandalkan.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="text-muted-foreground">
-              <div>GenTech Audit Platform</div>
-              <div className="text-xs">{currentDate}</div>
-            </div>
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              <span>Verified</span>
-            </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Action Buttons */}
-        <div id="report-action-buttons" className="flex gap-3 pb-safe">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          id="report-action-buttons" 
+          className="flex flex-col sm:flex-row gap-4 pt-6"
+        >
           <button
             onClick={onBack}
-            className="px-4 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition shadow-sm border border-gray-200"
+            className="px-6 py-4 bg-white text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200"
           >
-            Kembali
+            Kembali ke Penelusuran
           </button>
           <button
             onClick={onViewDashboard}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-lg"
+            className="flex-1 px-6 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98]"
           >
-            Lihat Dashboard
+            Selesai & Kembali ke Dashboard
           </button>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

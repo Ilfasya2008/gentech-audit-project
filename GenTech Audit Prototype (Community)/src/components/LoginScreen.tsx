@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Lock, Mail, ArrowRight, X, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, ArrowRight, X, KeyRound, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logo from 'figma:asset/3b670beca6d9f65f8127efd31decabb8aaae9980.png';
-import { setCurrentUserEmail, setCurrentUserName } from '../lib/userProgress';
+import { setCurrentUserEmail, setCurrentUserName, setCurrentUserRole } from '../lib/userProgress';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -12,6 +12,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
   
   // Modal State untuk Lupa Password
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -63,6 +65,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         if (data.name) {
           setCurrentUserName(data.name);
         }
+        setCurrentUserRole(data.role || 'user');
         
         // LOGIKA PEMBEDA ADMIN DAN USER
         if (data.role === 'admin') {
@@ -73,12 +76,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         
       } else {
         // Kalau password atau email salah, munculin error dari database
-        alert(data.message);
+        setLoginError(data.message || 'Email atau Password salah!');
         setIsLoading(false);
       }
     } catch (error) {
       console.error("Error connecting to server:", error);
-      alert("Gagal terhubung ke database. Pastikan XAMPP Apache & MySQL menyala.");
+      setLoginError("Gagal terhubung ke database. Pastikan XAMPP Apache & MySQL menyala.");
       
       // HAPUS ATAU COMMENT 2 BARIS DI BAWAH JIKA BACKEND SUDAH JALAN 100%
       // Ini hanya fallback darurat agar kamu tetap bisa masuk jika API belum siap
@@ -177,6 +180,17 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <p className="text-gray-500 font-medium">Silakan masuk untuk melanjutkan simulasi audit Anda.</p>
           </div>
 
+          {loginError && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-red-700">{loginError}</p>
+            </motion.div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2 ml-1">
@@ -190,7 +204,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setLoginError('');
+                  }}
                   className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
                   placeholder="name@company.com"
                   required
@@ -208,13 +225,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setLoginError('');
+                  }}
+                  className="block w-full pl-11 pr-12 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 

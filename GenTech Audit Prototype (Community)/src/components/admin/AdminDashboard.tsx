@@ -15,6 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { Button } from '../ui/button';
+import { getCurrentUserName } from '../../lib/userProgress';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   useEffect(() => {
     fetchStats();
@@ -48,8 +50,10 @@ export default function AdminDashboard() {
         quizzes: quizzesRes.data.data?.length || 0,
         transactions: txRes.data.data?.length || 0
       });
+      setApiStatus('online');
     } catch (error) {
       console.error("Error fetching admin stats:", error);
+      setApiStatus('offline');
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +102,7 @@ export default function AdminDashboard() {
           <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             Selamat Datang Kembali
           </span>
-          <h2 className="text-3xl font-extrabold tracking-tight">Halo, Admin GenTech!</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Halo, {getCurrentUserName() || 'Admin'}!</h2>
           <p className="text-blue-100/90 text-sm leading-relaxed">
             Di sini Anda dapat mengelola materi modul pembelajaran, membuat bank kuis evaluasi, mengelola user terdaftar, serta mengatur data transaksi simulasi blockchain.
           </p>
@@ -157,10 +161,22 @@ export default function AdminDashboard() {
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">API Server (Laravel)</span>
-                    <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-green-100 flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping" />
-                      Aktif (Port 8000)
-                    </span>
+                    {apiStatus === 'online' ? (
+                      <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-green-100 flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping" />
+                        Aktif (Port 8000)
+                      </span>
+                    ) : apiStatus === 'offline' ? (
+                      <span className="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-red-100 flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        Terputus
+                      </span>
+                    ) : (
+                      <span className="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-amber-100 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Mengecek...
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Database Driver</span>

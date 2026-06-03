@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Lock, Database, Save, RotateCcw, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import { getCurrentUserEmail, getCurrentUserName, setCurrentUserName, setCurrentUserEmail, resetUserProgress } from '../lib/userProgress';
+import { X, User, Lock, Database, Save, RotateCcw, AlertTriangle, CheckCircle2, XCircle, HelpCircle, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
+import { getCurrentUserEmail, getCurrentUserName, setCurrentUserName, setCurrentUserEmail, resetUserProgress, getCurrentUserRole } from '../lib/userProgress';
+import axios from 'axios';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TabType = 'profile' | 'security' | 'data';
+type TabType = 'profile' | 'security' | 'data' | 'faq';
+
+interface Faq {
+  id: number;
+  question: string;
+  answer: string;
+}
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
@@ -25,6 +32,25 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // FAQ State
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [loadingFaqs, setLoadingFaqs] = useState(false);
+  const [expandedFaqId, setExpandedFaqId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'faq' && faqs.length === 0) {
+      setLoadingFaqs(true);
+      axios.get('http://localhost:8000/api/faqs')
+        .then(res => {
+          if (res.data.success) {
+            setFaqs(res.data.data);
+          }
+        })
+        .catch(err => console.error("Error fetching FAQs:", err))
+        .finally(() => setLoadingFaqs(false));
+    }
+  }, [activeTab, faqs.length]);
+
 
 
   useEffect(() => {
@@ -39,12 +65,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [isOpen]);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentUserName(name);
-    setCurrentUserEmail(email);
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 3000);
+    try {
+      const response = await fetch('http://localhost:8000/api/change-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          name: name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setCurrentUserName(name);
+        setProfileSaved(true);
+        setTimeout(() => setProfileSaved(false), 3000);
+      } else {
+        alert(data.message || 'Gagal menyimpan profil.');
+      }
+    } catch (error) {
+      alert('Gagal terhubung ke server.');
+    }
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -135,11 +182,29 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 label="Keamanan" 
               />
               <TabButton 
+                active={activeTab === 'faq'} 
+                onClick={() => setActiveTab('faq')} 
+                icon={HelpCircle} 
+                label="Pusat Bantuan (FAQ)" 
+              />
+              <TabButton 
                 active={activeTab === 'data'} 
                 onClick={() => setActiveTab('data')} 
                 icon={Database} 
                 label="Manajemen Data" 
               />
+              
+              {getCurrentUserRole() === 'admin' && (
+                <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    onClick={() => window.location.href = '/admin/dashboard'}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold whitespace-nowrap text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                  >
+                    <ShieldAlert className="w-5 h-5" />
+                    <span className="hidden md:inline">Kembali ke Admin</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Main Content Area */}
@@ -177,9 +242,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <input
                           type="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                          required
+                          readOnly
+                          className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 cursor-not-allowed outline-none"
                         />
                       </div>
                       <button
@@ -284,6 +348,57 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </div>
                       </div>
                     </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'faq' && (
+                  <motion.div
+                    key="faq"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Pusat Bantuan (FAQ)</h3>
+                    <p className="text-slate-500 mb-6">Pertanyaan yang sering diajukan seputar platform simulasi GenTech Audit.</p>
+                    
+                    {loadingFaqs ? (
+                      <div className="text-center py-8 text-slate-500">Memuat pertanyaan...</div>
+                    ) : faqs.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-slate-100">Belum ada FAQ yang tersedia saat ini.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {faqs.map(faq => (
+                          <div key={faq.id} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:border-blue-200 transition-colors">
+                            <button 
+                              onClick={() => setExpandedFaqId(expandedFaqId === faq.id ? null : faq.id)}
+                              className="w-full flex items-center justify-between p-4 text-left font-bold text-slate-700 focus:outline-none"
+                            >
+                              <span className="pr-4">{faq.question}</span>
+                              {expandedFaqId === faq.id ? (
+                                <ChevronUp className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                              )}
+                            </button>
+                            <AnimatePresence>
+                              {expandedFaqId === faq.id && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <div className="px-4 pb-4 text-slate-600 border-t border-slate-100 pt-3 bg-slate-50 leading-relaxed whitespace-pre-wrap">
+                                    {faq.answer}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

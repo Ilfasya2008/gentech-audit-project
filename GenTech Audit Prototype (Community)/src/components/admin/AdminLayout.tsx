@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
+import { getCurrentUserEmail, getCurrentUserName } from '../../lib/userProgress';
 import { 
   LayoutDashboard, 
   Users, 
@@ -20,6 +22,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const menuItems = [
     { name: 'Dashboard Overview', path: '/admin/dashboard', icon: LayoutDashboard },
@@ -27,12 +30,15 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: 'Modules', path: '/admin/modules', icon: BookOpen },
     { name: 'Quiz Bank', path: '/admin/quizzes', icon: HelpCircle },
     { name: 'Transactions', path: '/admin/transactions', icon: Landmark },
+    { name: 'FAQ Management', path: '/admin/faqs', icon: HelpCircle },
   ];
 
   const handleLogout = () => {
-    if (window.confirm("Apakah Anda yakin ingin keluar?")) {
-      window.location.href = '/';
-    }
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    window.location.href = '/';
   };
 
   return (
@@ -106,7 +112,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-sm font-semibold text-slate-800">Admin GenTech</p>
+                <p className="text-sm font-semibold text-slate-800">{getCurrentUserName() || 'Admin'}</p>
                 <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                   Administrator
                 </span>
@@ -125,6 +131,49 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           </div>
         </main>
       </div>
+
+      {/* Logout Modal */}
+      <AnimatePresence>
+        {isLogoutModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setIsLogoutModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl text-center"
+            >
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <LogOut className="w-8 h-8 text-red-500 ml-1" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Konfirmasi Keluar</h3>
+              <p className="text-slate-500 mb-6 text-sm">
+                Apakah Anda yakin ingin keluar dari Admin Panel?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsLogoutModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-white font-bold bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all active:scale-95"
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

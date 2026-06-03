@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\SimulationTransactionController;
+use App\Http\Controllers\Api\FaqController;
 
 // Modules
 Route::get('/modules',        [ModuleController::class, 'index']);
@@ -21,6 +22,13 @@ Route::delete('/users/{id}',[UserController::class, 'destroy']);
 Route::post('/login',       [UserController::class, 'login']);
 Route::post('/register',    [UserController::class, 'register']);
 Route::post('/change-password', [UserController::class, 'changePassword']);
+Route::post('/change-profile', [UserController::class, 'changeProfile']);
+
+// FAQs
+Route::get('/faqs',         [FaqController::class, 'index']);
+Route::post('/faqs',        [FaqController::class, 'store']);
+Route::put('/faqs/{id}',    [FaqController::class, 'update']);
+Route::delete('/faqs/{id}', [FaqController::class, 'destroy']);
 
 // Quizzes
 Route::get('/quizzes',          [QuizController::class, 'index']);

@@ -3,6 +3,7 @@ import { getOverallQuizScore } from '../data/quizData';
 
 const SESSION_KEY = 'gentech_current_user'; // stores the email of whoever is logged in
 const NAME_SESSION_KEY = 'gentech_current_user_name'; // stores the user's name
+const ROLE_SESSION_KEY = 'gentech_current_user_role'; // stores the user's role
 
 /** Returns the localStorage key specific to the given user email. */
 function storageKeyFor(email: string): string {
@@ -27,10 +28,19 @@ export function setCurrentUserName(name: string): void {
   localStorage.setItem(NAME_SESSION_KEY, name);
 }
 
+export function getCurrentUserRole(): string | null {
+  return localStorage.getItem(ROLE_SESSION_KEY);
+}
+
+export function setCurrentUserRole(role: string): void {
+  localStorage.setItem(ROLE_SESSION_KEY, role);
+}
+
 /** Clear the current user session (call on logout). */
 export function clearCurrentUserSession(): void {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(NAME_SESSION_KEY);
+  localStorage.removeItem(ROLE_SESSION_KEY);
 }
 
 export function resetUserProgress(): void {
@@ -79,11 +89,7 @@ export function loadUserProgress(): UserProgress {
     };
     
     // Calculate derived XP and Level dynamically to ensure consistency
-    const { xp, level } = calculateXPAndLevel(progress);
-    progress.xp = xp;
-    progress.level = level;
-    
-    return progress;
+    return computeProgressState(progress);
   } catch {
     return defaultUserProgress();
   }
@@ -113,11 +119,7 @@ export function loadUserProgressByEmail(email: string): UserProgress {
     };
     
     // Calculate derived XP and Level dynamically to ensure consistency
-    const { xp, level } = calculateXPAndLevel(progress);
-    progress.xp = xp;
-    progress.level = level;
-    
-    return progress;
+    return computeProgressState(progress);
   } catch {
     return defaultUserProgress();
   }
@@ -127,11 +129,32 @@ export function saveUserProgress(progress: UserProgress): void {
   const email = getCurrentUserEmail();
   if (!email) return; // no session, don't overwrite anything
   
-  // Always ensure XP and Level are up-to-date before saving
-  const { xp, level } = calculateXPAndLevel(progress);
-  const toSave = { ...progress, xp, level };
+  // Ensure it's fully synced before saving
+  const toSave = computeProgressState(progress);
   
   localStorage.setItem(storageKeyFor(email), JSON.stringify(toSave));
+}
+
+/**
+ * Computes all derived states (badges, XP, Level) to guarantee synchronization.
+ */
+export function computeProgressState(progress: Omit<UserProgress, 'xp' | 'level' | 'badges'> | UserProgress): UserProgress {
+  const next = { ...progress } as UserProgress;
+  
+  // 1. Sync Badges
+  const badges: string[] = [];
+  if (next.completedModules >= (next.totalModules || 4) && (next.totalModules || 4) > 0) badges.push('Learning Master');
+  if ((next.quizScore || 0) >= 80) badges.push('Quiz Expert');
+  if ((next.transactionsFlagged || 0) >= 3) badges.push('Junior Auditor');
+  if ((next.transactionsReviewed || 0) >= 5) badges.push('Explorer');
+  next.badges = badges;
+
+  // 2. Sync XP and Level
+  const { xp, level } = calculateXPAndLevel(next);
+  next.xp = xp;
+  next.level = level;
+
+  return next;
 }
 
 /**

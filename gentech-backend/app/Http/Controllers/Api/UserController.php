@@ -136,6 +136,32 @@ class UserController extends Controller
         ]);
     }
 
+    public function changeProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'name'  => 'required|string|max:255',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'User tidak ditemukan!',
+            ], 404);
+        }
+
+        $user->name = $validated['name'];
+        $user->save();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Profil berhasil diperbarui!',
+            'name'    => $user->name
+        ]);
+    }
+
     public function register(Request $request)
     {
         $validated = $request->validate([

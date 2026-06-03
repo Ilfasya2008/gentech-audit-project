@@ -11,6 +11,7 @@ import {
   X,
   Loader2,
   Eye,
+  EyeOff,
   Award,
   BookOpen,
   Brain,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { Button } from '../ui/button';
-import { loadUserProgressByEmail } from '../../lib/userProgress';
+import { loadUserProgressByEmail, getCurrentUserEmail, setCurrentUserName } from '../../lib/userProgress';
 import type { UserProgress } from '../../App';
 
 interface User {
@@ -48,6 +49,7 @@ export default function UserManagement() {
   });
   
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -131,6 +133,13 @@ export default function UserManagement() {
           updateData.password = formData.password;
         }
         await axios.put(`http://localhost:8000/api/users/${editingId}`, updateData);
+        
+        // Jika admin mengedit dirinya sendiri, update nama di localStorage juga
+        if (formData.email === getCurrentUserEmail()) {
+          setCurrentUserName(formData.name);
+          // Force a small reload so the top right name updates immediately
+          window.location.reload();
+        }
       } else {
         // Create user
         await axios.post('http://localhost:8000/api/users', formData);
@@ -195,9 +204,18 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition duration-150">
-                    <td className="px-6 py-4 font-semibold text-slate-800">{user.name}</td>
+                {filteredUsers.map((user) => {
+                  const isCurrentUser = user.email === getCurrentUserEmail();
+                  return (
+                  <tr key={user.id} className={`transition duration-150 ${isCurrentUser ? 'bg-blue-50/30 hover:bg-blue-50/60 border-l-4 border-l-blue-500' : 'hover:bg-slate-50/50'}`}>
+                    <td className="px-6 py-4 font-semibold text-slate-800">
+                      {user.name}
+                      {isCurrentUser && (
+                        <span className="ml-2 inline-block text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                          Anda
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-slate-600 text-sm">{user.email}</td>
                     <td className="px-6 py-4">
                       {user.role === 'admin' ? (
@@ -245,7 +263,7 @@ export default function UserManagement() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -308,14 +326,23 @@ export default function UserManagement() {
                     <span className="text-[10px] text-slate-400 italic font-medium">Biarkan kosong jika tidak ingin diubah</span>
                   )}
                 </div>
-                <input 
-                  type="password"
-                  placeholder={editingId ? "••••••••" : "Masukkan password (min. 6 karakter)"} 
-                  className="w-full border-2 border-slate-100 focus:border-blue-500 outline-none p-3 rounded-xl text-sm transition bg-slate-50/50 focus:bg-white" 
-                  value={formData.password} 
-                  onChange={e => setFormData({...formData, password: e.target.value})} 
-                  required={!editingId}
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    placeholder={editingId ? "••••••••" : "Masukkan password (min. 6 karakter)"} 
+                    className="w-full border-2 border-slate-100 focus:border-blue-500 outline-none p-3 pr-10 rounded-xl text-sm transition bg-slate-50/50 focus:bg-white" 
+                    value={formData.password} 
+                    onChange={e => setFormData({...formData, password: e.target.value})} 
+                    required={!editingId}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -325,7 +352,7 @@ export default function UserManagement() {
                   value={formData.role}
                   onChange={e => setFormData({...formData, role: e.target.value})}
                 >
-                  <option value="user">User Biasa</option>
+                  <option value="user">User</option>
                   <option value="admin">Administrator</option>
                 </select>
               </div>
@@ -382,7 +409,11 @@ export default function UserManagement() {
                   <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Status Pengguna</p>
                   <div className="flex items-center gap-3 mt-2">
                     <span className="inline-flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold text-slate-700 shadow-sm">
-                      <Shield className="w-3.5 h-3.5 text-blue-500" />
+                      {selectedUserDetails.user.role === 'admin' ? (
+                        <Shield className="w-3.5 h-3.5 text-purple-500" />
+                      ) : (
+                        <UserIcon className="w-3.5 h-3.5 text-slate-500" />
+                      )}
                       {selectedUserDetails.user.role.toUpperCase()}
                     </span>
                     <span className="inline-flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold text-slate-500 shadow-sm">
@@ -390,16 +421,13 @@ export default function UserManagement() {
                     </span>
                   </div>
                 </div>
-                {selectedUserDetails.user.role !== 'admin' && (
                   <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm text-center">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Level</p>
                     <p className="text-2xl font-extrabold text-indigo-600">{selectedUserDetails.progress.level || 1}</p>
                   </div>
-                )}
               </div>
 
-              {/* Stats Grid - Hanya untuk User Biasa */}
-              {selectedUserDetails.user.role !== 'admin' ? (
+              {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition group">
                     <div className="flex items-center gap-3 mb-3">
@@ -450,13 +478,6 @@ export default function UserManagement() {
                     </p>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
-                  <Shield className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-                  <h3 className="text-blue-800 font-bold mb-1">Akun Administrator</h3>
-                  <p className="text-blue-600 text-sm">Akun ini memiliki hak akses penuh untuk mengelola platform. Administrator tidak dilacak progres belajarnya.</p>
-                </div>
-              )}
               
             </div>
             

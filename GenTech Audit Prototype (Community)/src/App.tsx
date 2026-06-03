@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { loadUserProgress, saveUserProgress } from './lib/userProgress';
+import { loadUserProgress, saveUserProgress, getCurrentUserRole, getCurrentUserEmail, computeProgressState } from './lib/userProgress';
 import { getOverallQuizScore } from './data/quizData';
 
 // Import Komponen User
@@ -24,6 +24,7 @@ import UserManagement from './components/admin/UserManagement';
 import ModuleManagement from './components/admin/ModuleManagement';
 import QuizManagement from './components/admin/QuizManagement';
 import TransactionManagement from './components/admin/TransactionManagement';
+import FaqManagement from './components/admin/FaqManagement';
 
 // --- Types & Interfaces ---
 export type AppScreen = 'learning' | 'quiz' | 'explorer' | 'report' | 'summary' | string;
@@ -34,7 +35,7 @@ export interface Transaction {
   to: string;
   amount: number;
   timestamp: string;
-  blockNumber: number;
+  blockNumber: number | string;
   hash: string;
   gasUsed: number;
   status: 'success' | 'pending' | 'failed';
@@ -56,6 +57,22 @@ export interface UserProgress {
   transactionsFlagged: number;
   badges: string[];
   xp: number;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const role = getCurrentUserRole();
+  if (role !== 'admin') {
+    return <Navigate to="/user/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const email = getCurrentUserEmail();
+  if (!email) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
 }
 
 function AppRoutes() {
@@ -84,7 +101,7 @@ function AppRoutes() {
     // Auto-sync dashboard count with actual flagged list
     setUserProgress(prev => {
       if (prev.transactionsFlagged !== flaggedTransactions.length) {
-        return { ...prev, transactionsFlagged: flaggedTransactions.length };
+        return computeProgressState({ ...prev, transactionsFlagged: flaggedTransactions.length });
       }
       return prev;
     });
@@ -96,17 +113,17 @@ function AppRoutes() {
     setUserProgress(prev => {
       if (prev.completedModuleIds.includes(moduleId)) return prev;
       const completedModuleIds = [...prev.completedModuleIds, moduleId];
-      return {
+      return computeProgressState({
         ...prev,
         completedModuleIds,
         completedModules: completedModuleIds.length,
-      };
+      });
     });
   };
 
   const setTotalModules = (count: number) => {
     setUserProgress(prev =>
-      prev.totalModules === count ? prev : { ...prev, totalModules: count }
+      prev.totalModules === count ? prev : computeProgressState({ ...prev, totalModules: count })
     );
   };
 
@@ -115,16 +132,11 @@ function AppRoutes() {
       const previous = prev.quizScores[quizId] ?? 0;
       const best = Math.max(previous, score);
       const quizScores = { ...prev.quizScores, [quizId]: best };
-      const badges = [...prev.badges];
-      if (score >= 80 && !badges.includes('Quiz Expert')) {
-        badges.push('Quiz Expert');
-      }
-      return {
+      return computeProgressState({
         ...prev,
         quizScores,
         quizScore: getOverallQuizScore(quizScores),
-        badges,
-      };
+      });
     });
     goTo('/quiz');
   };
@@ -225,133 +237,153 @@ function AppRoutes() {
           <Route
             path="/user/dashboard"
             element={
-              <Dashboard
-                userProgress={userProgress}
-                onTotalModulesLoaded={setTotalModules}
-                navigate={navigateToScreen}
-              />
+              <PrivateRoute>
+                <Dashboard
+                  userProgress={userProgress}
+                  onTotalModulesLoaded={setTotalModules}
+                  navigate={navigateToScreen}
+                />
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/summary"
             element={
-              <DashboardSummary
-                progress={userProgress}
-                onNavigate={navigateToScreen}
-              />
+              <PrivateRoute>
+                <DashboardSummary
+                  progress={userProgress}
+                  onNavigate={navigateToScreen}
+                />
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/learning"
             element={
-              <LearningModule
-                onModuleComplete={handleCompleteModule}
-                onAllModulesComplete={() => goTo('/quiz')}
-                onNavigate={navigateToScreen}
-                onTotalModulesLoaded={setTotalModules}
-                progress={userProgress}
-              />
+              <PrivateRoute>
+                <LearningModule
+                  onModuleComplete={handleCompleteModule}
+                  onAllModulesComplete={() => goTo('/quiz')}
+                  onNavigate={navigateToScreen}
+                  onTotalModulesLoaded={setTotalModules}
+                  progress={userProgress}
+                />
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/quiz"
             element={
-              <QuizDashboard
-                userProgress={userProgress}
-                onSelectQuiz={id => goTo(`/quiz/${id}`)}
-                onNavigateHome={() => goTo('/user/dashboard')}
-              />
+              <PrivateRoute>
+                <QuizDashboard
+                  userProgress={userProgress}
+                  onSelectQuiz={id => goTo(`/quiz/${id}`)}
+                  onNavigateHome={() => goTo('/user/dashboard')}
+                />
+              </PrivateRoute>
             }
           />
 
-          <Route path="/quiz/:quizId" element={<QuizPlayRoute />} />
+          <Route path="/quiz/:quizId" element={<PrivateRoute><QuizPlayRoute /></PrivateRoute>} />
 
           <Route
             path="/explorer"
             element={
-              <TransactionExplorer
-                onSelectTransaction={(tx) => {
-                  setSelectedTransaction(tx);
-                  setUserProgress(prev => ({
-                    ...prev,
-                    transactionsReviewed: prev.transactionsReviewed + 1
-                  }));
-                  goTo('/detail');
-                }}
-                onNavigate={navigateToScreen}
-                flaggedTransactions={flaggedTransactions}
-              />
+              <PrivateRoute>
+                <TransactionExplorer
+                  onSelectTransaction={(tx) => {
+                    setSelectedTransaction(tx);
+                    setUserProgress(prev => computeProgressState({
+                      ...prev,
+                      transactionsReviewed: prev.transactionsReviewed + 1
+                    }));
+                    goTo('/detail');
+                  }}
+                  onNavigate={navigateToScreen}
+                  flaggedTransactions={flaggedTransactions}
+                />
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/detail"
             element={
-              selectedTransaction ? (
-                <TransactionDetail
-                  transaction={selectedTransaction}
-                  isFlagged={flaggedTransactions.some(f => f.id === selectedTransaction.id)}
-                  onFlag={(note) => {
-                    handleFlagTransaction(selectedTransaction, note);
-                    goTo('/explorer');
-                  }}
-                  onViewProof={() => goTo('/proof')}
-                  onBack={() => goTo('/explorer')}
-                />
-              ) : (
-                <Navigate to="/explorer" replace />
-              )
+              <PrivateRoute>
+                {selectedTransaction ? (
+                  <TransactionDetail
+                    transaction={selectedTransaction}
+                    isFlagged={flaggedTransactions.some(f => f.id === selectedTransaction.id)}
+                    onFlag={(note) => {
+                      handleFlagTransaction(selectedTransaction, note);
+                      goTo('/explorer');
+                    }}
+                    onViewProof={() => goTo('/proof')}
+                    onBack={() => goTo('/explorer')}
+                  />
+                ) : (
+                  <Navigate to="/explorer" replace />
+                )}
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/proof"
             element={
-              selectedTransaction ? (
-                <BlockchainProof
-                  transaction={selectedTransaction}
-                  onBack={() => goTo('/detail')}
-                  onGenerateReport={() => goTo('/report')}
-                />
-              ) : (
-                <Navigate to="/explorer" replace />
-              )
+              <PrivateRoute>
+                {selectedTransaction ? (
+                  <BlockchainProof
+                    transaction={selectedTransaction}
+                    onBack={() => goTo('/detail')}
+                    onGenerateReport={() => goTo('/report')}
+                  />
+                ) : (
+                  <Navigate to="/explorer" replace />
+                )}
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/report"
             element={
-              <AuditReport 
-                flaggedTransactions={flaggedTransactions}
-                onBack={() => goTo('/explorer')}
-                onViewDashboard={() => goTo('/user/dashboard')}
-              />
+              <PrivateRoute>
+                <AuditReport 
+                  flaggedTransactions={flaggedTransactions}
+                  onBack={() => goTo('/explorer')}
+                  onViewDashboard={() => goTo('/user/dashboard')}
+                />
+              </PrivateRoute>
             }
           />
 
           <Route
             path="/admin/dashboard"
-            element={<AdminDashboard />}
+            element={<AdminRoute><AdminDashboard /></AdminRoute>}
           />
           <Route
             path="/admin/users"
-            element={<UserManagement />}
+            element={<AdminRoute><UserManagement /></AdminRoute>}
           />
           <Route
             path="/admin/modules"
-            element={<ModuleManagement />}
+            element={<AdminRoute><ModuleManagement /></AdminRoute>}
           />
           <Route
             path="/admin/quizzes"
-            element={<QuizManagement />}
+            element={<AdminRoute><QuizManagement /></AdminRoute>}
           />
           <Route
             path="/admin/transactions"
-            element={<TransactionManagement />}
+            element={<AdminRoute><TransactionManagement /></AdminRoute>}
+          />
+          <Route
+            path="/admin/faqs"
+            element={<AdminRoute><FaqManagement /></AdminRoute>}
           />
         </Routes>
       </div>
