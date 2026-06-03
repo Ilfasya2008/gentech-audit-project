@@ -31,6 +31,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // FAQ State
   const [faqs, setFaqs] = useState<Faq[]>([]);
@@ -134,11 +135,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
 
 
-  const handleResetProgress = () => {
-    if (window.confirm("PERINGATAN: Semua riwayat XP, Lencana, dan Modul Anda akan dihapus. Anda yakin ingin mereset progress?")) {
-      resetUserProgress();
-      window.location.reload();
-    }
+  const executeResetProgress = () => {
+    resetUserProgress();
+    window.location.reload();
   };
 
   return (
@@ -339,7 +338,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             Peringatan: Tindakan ini akan secara permanen menghapus semua poin XP, Lencana yang didapat, dan riwayat penyelesaian Modul serta Kuis Anda. Anda akan memulai simulasi dari awal.
                           </p>
                           <button
-                            onClick={handleResetProgress}
+                            onClick={() => setShowResetConfirm(true)}
                             className="flex items-center justify-center gap-2 w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95"
                           >
                             <RotateCcw className="w-4 h-4" />
@@ -402,6 +401,53 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowResetConfirm(false)}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-8 shadow-2xl border border-slate-200 dark:border-slate-800 text-center"
+          >
+            <div className="w-20 h-20 bg-red-50 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-red-100 dark:border-red-900/50">
+              <RotateCcw className="w-10 h-10 text-red-500" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-3">
+              Reset Progress?
+            </h3>
+            
+            <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+              Tindakan ini <span className="font-bold text-red-500">TIDAK DAPAT DIBATALKAN</span>. Semua XP, Lencana, dan riwayat Kuis Anda akan 
+              dihapus permanen dari sistem. Anda yakin?
+            </p>
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={executeResetProgress}
+                className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all active:scale-95"
+              >
+                Ya, Reset!
+              </button>
             </div>
           </motion.div>
         </div>

@@ -37,14 +37,14 @@ export function DashboardSummary({ progress, onNavigate }: DashboardSummaryProps
     { 
       id: 'auditor', 
       name: 'Junior Auditor', 
-      description: 'Diberikan kepada pengguna yang tajam dalam menemukan dan menandai minimal 3 transaksi mencurigakan.',
+      description: 'Diberikan kepada pengguna yang tajam dalam menemukan dan menandai minimal 5 transaksi mencurigakan.',
       icon: Flag, 
-      earned: progress.transactionsFlagged >= 3, 
+      earned: progress.transactionsFlagged >= 5, 
       color: 'from-orange-500 to-rose-600',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-700',
       currentValue: progress.transactionsFlagged,
-      targetValue: 3,
+      targetValue: 5,
       unit: 'Transaksi'
     },
     { 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { loadUserProgress, saveUserProgress, getCurrentUserRole, getCurrentUserEmail, computeProgressState } from './lib/userProgress';
 import { getOverallQuizScore } from './data/quizData';
 
@@ -79,7 +80,8 @@ function AppRoutes() {
   const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [flaggedTransactions, setFlaggedTransactions] = useState<FlaggedTransaction[]>(() => {
-    const saved = localStorage.getItem('audit_flagged_transactions');
+    const email = getCurrentUserEmail() || 'default';
+    const saved = localStorage.getItem(`audit_flagged_transactions_${email}`);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -90,13 +92,61 @@ function AppRoutes() {
     return [];
   });
   const [userProgress, setUserProgress] = useState<UserProgress>(loadUserProgress);
+  const location = useLocation();
+
+  // Sync with backend to remove deleted modules and quizzes
+  useEffect(() => {
+    if (location.pathname.startsWith('/user') || location.pathname.startsWith('/quiz')) {
+      Promise.all([
+        axios.get('http://localhost:8000/api/modules').catch(() => null),
+        axios.get('http://localhost:8000/api/quizzes').catch(() => null)
+      ]).then(([modulesRes, quizzesRes]) => {
+        setUserProgress(prev => {
+          let modified = false;
+          let newModuleIds = prev.completedModuleIds;
+          let newQuizScores = { ...prev.quizScores };
+
+          if (modulesRes?.data?.success) {
+            const activeIds = modulesRes.data.data.filter((m: any) => m.status !== 'draft').map((m: any) => m.id);
+            newModuleIds = prev.completedModuleIds.filter(id => activeIds.includes(id));
+            if (newModuleIds.length !== prev.completedModuleIds.length) modified = true;
+          }
+
+          if (quizzesRes?.data?.success) {
+            const activeIds = quizzesRes.data.data.map((q: any) => String(q.id));
+            const validScores: Record<string, number> = {};
+            for (const [id, score] of Object.entries(prev.quizScores)) {
+              if (activeIds.includes(id) || id === 'blockchain-basics') {
+                validScores[id] = score;
+              } else {
+                modified = true;
+              }
+            }
+            if (modified) newQuizScores = validScores;
+          }
+
+          if (modified) {
+            return computeProgressState({
+              ...prev,
+              completedModuleIds: newModuleIds,
+              completedModules: newModuleIds.length,
+              quizScores: newQuizScores,
+              quizScore: getOverallQuizScore(newQuizScores)
+            });
+          }
+          return prev;
+        });
+      });
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     saveUserProgress(userProgress);
   }, [userProgress]);
 
   useEffect(() => {
-    localStorage.setItem('audit_flagged_transactions', JSON.stringify(flaggedTransactions));
+    const email = getCurrentUserEmail() || 'default';
+    localStorage.setItem(`audit_flagged_transactions_${email}`, JSON.stringify(flaggedTransactions));
     
     // Auto-sync dashboard count with actual flagged list
     setUserProgress(prev => {

@@ -20,7 +20,10 @@ export default function Dashboard({ navigate, userProgress, onTotalModulesLoaded
   useEffect(() => {
     axios
       .get('http://localhost:8000/api/modules')
-      .then(res => onTotalModulesLoaded(res.data.data?.length ?? 0))
+      .then(res => {
+        const activeModules = (res.data.data || []).filter((m: any) => m.status !== 'draft');
+        onTotalModulesLoaded(activeModules.length);
+      })
       .catch(() => {});
 
     // Fetch total quiz count from API (now source of truth)

@@ -77,17 +77,19 @@ export function QuizScreen({ quiz, previousBestScore, onComplete, onBack }: Quiz
     } else if (isLastQuestion) {
       setQuizCompleted(true);
     } else {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(answers[currentQuestion + 1]);
-      setShowExplanation(false);
+      const nextQ = currentQuestion + 1;
+      setCurrentQuestion(nextQ);
+      setSelectedAnswer(answers[nextQ]);
+      setShowExplanation(answers[nextQ] !== null);
     }
   };
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-      setSelectedAnswer(answers[currentQuestion - 1]);
-      setShowExplanation(false);
+      const prevQ = currentQuestion - 1;
+      setCurrentQuestion(prevQ);
+      setSelectedAnswer(answers[prevQ]);
+      setShowExplanation(answers[prevQ] !== null);
     }
   };
 

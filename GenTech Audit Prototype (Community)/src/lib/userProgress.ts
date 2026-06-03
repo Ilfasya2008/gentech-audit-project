@@ -47,6 +47,7 @@ export function resetUserProgress(): void {
   const email = getCurrentUserEmail();
   if (email) {
     localStorage.removeItem(storageKeyFor(email));
+    localStorage.removeItem(`audit_flagged_transactions_${email}`);
   }
 }
 
@@ -145,7 +146,7 @@ export function computeProgressState(progress: Omit<UserProgress, 'xp' | 'level'
   const badges: string[] = [];
   if (next.completedModules >= (next.totalModules || 4) && (next.totalModules || 4) > 0) badges.push('Learning Master');
   if ((next.quizScore || 0) >= 80) badges.push('Quiz Expert');
-  if ((next.transactionsFlagged || 0) >= 3) badges.push('Junior Auditor');
+  if ((next.transactionsFlagged || 0) >= 5) badges.push('Junior Auditor');
   if ((next.transactionsReviewed || 0) >= 5) badges.push('Explorer');
   next.badges = badges;
 

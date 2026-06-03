@@ -5,7 +5,6 @@ import {
   Search, 
   Edit2, 
   Trash2, 
-  HelpCircle, 
   Clock, 
   BookOpen, 
   ChevronRight,
@@ -13,7 +12,7 @@ import {
   X,
   Loader2,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   Brain,
   Shield,
   Award,
@@ -37,7 +36,7 @@ interface Quiz {
   icon?: string;
   color?: string;
   questions_count?: number;
-  is_active?: boolean | number;
+  is_active?: boolean | number | string;
 }
 
 interface Question {
@@ -78,6 +77,7 @@ export default function QuizManagement() {
   // Modals
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<number | null>(null);
   
   // Form states
   const [editingQuizId, setEditingQuizId] = useState<number | null>(null);
@@ -172,21 +172,26 @@ export default function QuizManagement() {
     setIsQuizModalOpen(true);
   };
 
-  const handleDeleteQuiz = async (id: number, e: React.MouseEvent) => {
+  const handleDeleteQuiz = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Apakah Anda yakin ingin menghapus Quiz Set ini? Semua pertanyaan di dalamnya akan ikut terhapus.")) {
-      try {
-        const res = await axios.delete(`http://localhost:8000/api/quizzes/${id}`);
-        if (res.data.success) {
-          fetchQuizzes();
-          if (selectedQuiz?.id === id) {
-            setSelectedQuiz(null);
-            setQuestions([]);
-          }
+    setQuizToDelete(id);
+  };
+
+  const executeDeleteQuiz = async () => {
+    if (quizToDelete === null) return;
+    try {
+      const res = await axios.delete(`http://localhost:8000/api/quizzes/${quizToDelete}`);
+      if (res.data.success) {
+        fetchQuizzes();
+        if (selectedQuiz?.id === quizToDelete) {
+          setSelectedQuiz(null);
+          setQuestions([]);
         }
-      } catch (error) {
-        alert("Gagal menghapus quiz.");
       }
+    } catch (error) {
+      alert("Gagal menghapus quiz.");
+    } finally {
+      setQuizToDelete(null);
     }
   };
 
@@ -796,6 +801,43 @@ export default function QuizManagement() {
           </div>
         </div>
       )}
+      
+      {/* Delete Quiz Confirmation Modal */}
+      {quizToDelete !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setQuizToDelete(null)}></div>
+          <div className="bg-white rounded-3xl w-full max-w-sm relative z-10 p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-red-100/50">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-xl font-bold text-center text-slate-800 mb-2">Hapus Quiz Set?</h3>
+            <p className="text-center text-slate-500 text-sm mb-6 leading-relaxed">
+              Apakah Anda yakin ingin menghapus Quiz ini? 
+              <br />
+              <span className="font-semibold text-red-500">Semua pertanyaan di dalamnya akan ikut terhapus.</span> Tindakan ini tidak dapat dibatalkan.
+            </p>
+            
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => setQuizToDelete(null)} 
+                className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 hover:border-slate-300"
+              >
+                Batal
+              </button>
+              <button 
+                type="button" 
+                onClick={executeDeleteQuiz} 
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-500/30"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </AdminLayout>
   );
 }
