@@ -80,13 +80,21 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("Error connecting to server:", error);
-      setLoginError("Gagal terhubung ke database. Pastikan XAMPP Apache & MySQL menyala.");
+      console.warn("Backend offline, activating offline fallback mode...");
       
-      // HAPUS ATAU COMMENT 2 BARIS DI BAWAH JIKA BACKEND SUDAH JALAN 100%
-      // Ini hanya fallback darurat agar kamu tetap bisa masuk jika API belum siap
-      console.log("Fallback mode aktif...");
-      onLogin(); 
+      // Simpan email agar sistem gamifikasi LocalStorage tetap bekerja
+      setCurrentUserEmail(email);
+      setCurrentUserName(email.split('@')[0]);
+      
+      // Jika email mengandung kata 'admin', jadikan admin
+      if (email.toLowerCase().includes('admin')) {
+        setCurrentUserRole('admin');
+        window.location.href = '/admin/dashboard';
+      } else {
+        setCurrentUserRole('user');
+        window.location.href = '/welcome';
+      }
+      
       setIsLoading(false);
     }
   };
